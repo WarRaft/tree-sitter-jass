@@ -205,6 +205,23 @@ endfunction
       value: (expr (number)))))
 
 ==================
+Assignment expression - simple
+==================
+
+function Test takes nothing returns nothing
+    a = b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (expr
+      (expr (id))
+      (expr (id)))))
+
+==================
 Call statement
 ==================
 

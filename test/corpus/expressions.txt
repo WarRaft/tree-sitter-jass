@@ -296,10 +296,10 @@ endfunction
     return_type: (id)
     (return_statement
       (expr
+        (expr (id))
         (expr
           (expr (id))
-          (expr (id)))
-        (expr (id))))))
+          (expr (id)))))))
 
 ==================
 Prefix increment
