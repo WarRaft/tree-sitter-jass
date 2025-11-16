@@ -21,28 +21,38 @@ module.exports = grammar({
 
     conflicts: $ => [
         [$.expr, $.function_call],
+        [$.var_stmt, $.expr],
+        [$.globals],
+        [$.function_statement],
         [$.loop_statement],
         [$.if_statement],
     ],
 
     rules: {
-        program: $ => repeat($._block),
+        program: $ => repeat($._statement),
 
         id: _ => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
-        _block: $ => choice(
+        _statement: $ => choice(
+            // Blocks
             $.globals,
             $.function_statement,
             $.native_statement,
             $.type_statement,
-        ),
 
-        _statement: $ => choice(
+            // Control flow
             $.if_statement,
             $.loop_statement,
             $.return_statement,
             $.exitwhen_statement,
+
+            // Declarations
             $.local_statement,
+            $.var_stmt,
+
+            // Expressions
+            $.set_statement,
+            $.call_statement,
             $.expr
         ),
 
@@ -50,12 +60,12 @@ module.exports = grammar({
             seq(
                 'loop',
                 repeat($._statement),
-                optional('endloop')
+                'endloop'
             ),
 
         globals: $ => seq(
             'globals',
-            repeat($.var_stmt),
+            repeat($._statement),
             optional('endglobals')
         ),
 
@@ -184,6 +194,21 @@ module.exports = grammar({
                 optional(seq('=', field('value', $.expr)))
             ),
 
+        set_statement: $ =>
+            seq(
+                'set',
+                field('variable', $.id),
+                optional(seq('[', field('index', $.expr), ']')),
+                '=',
+                field('value', $.expr)
+            ),
+
+        call_statement: $ =>
+            seq(
+                'call',
+                $.function_call
+            ),
+
         if_statement: $ =>
             seq(
                 'if',
@@ -199,7 +224,7 @@ module.exports = grammar({
                     )
                 ),
                 optional(seq('else', repeat($._statement))),
-                optional('endif')
+                'endif'
             ),
 
         function_start: () => 'function',

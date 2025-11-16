@@ -28,12 +28,12 @@ endglobals
       type: (id)
       (var_decl
         name: (id)
-        (expr (number))))
+        value: (expr (number))))
     (var_stmt
       type: (id)
       (var_decl
         name: (id)
-        (expr (float))))))
+        value: (expr (float))))))
 
 ==================
 Globals - constant
@@ -51,7 +51,7 @@ endglobals
       type: (id)
       (var_decl
         name: (id)
-        (expr (number))))))
+        value: (expr (number))))))
 
 ==================
 Globals - array
@@ -159,15 +159,13 @@ endfunction
 (program
   (function_statement
     name: (id)
-    (var_stmt
+    (local_statement
       type: (id)
-      (var_decl
-        name: (id)
-        (expr (number))))
-    (var_stmt
+      name: (id)
+      value: (expr (number)))
+    (local_statement
       type: (id)
-      (var_decl
-        name: (id)))))
+      name: (id))))
 
 ==================
 Set statement
@@ -398,11 +396,10 @@ endfunction
 (program
   (function_statement
     name: (id)
-    (var_stmt
+    (local_statement
       type: (id)
-      (var_decl
-        name: (id)
-        (expr (number))))
+      name: (id)
+      value: (expr (number)))
     (loop_statement
       (exitwhen_statement
         (expr
@@ -418,3 +415,81 @@ endfunction
         value: (expr
           (expr (id))
           (expr (number)))))))
+
+==================
+Set statement - top level
+==================
+
+set a = 2
+
+---
+
+(program
+  (set_statement
+    variable: (id)
+    value: (expr (number))))
+
+==================
+Variable declarations - top level
+==================
+
+local integer b
+real b
+real c
+
+---
+
+(program
+  (local_statement
+    type: (id)
+    name: (id))
+  (var_stmt
+    type: (id)
+    (var_decl
+      name: (id)))
+  (var_stmt
+    type: (id)
+    (var_decl
+      name: (id))))
+
+==================
+Nested globals
+==================
+
+globals
+    globals
+        integer x
+    endglobals
+endglobals
+
+---
+
+(program
+  (globals
+    (globals
+      (var_stmt
+        type: (id)
+        (var_decl
+          name: (id))))))
+
+==================
+Nested functions
+==================
+
+function Test takes nothing returns nothing
+    function Inner takes nothing returns nothing
+        set x = 5
+    endfunction
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (function_statement
+      name: (id)
+      (set_statement
+        variable: (id)
+        value: (expr (number))))))
+
