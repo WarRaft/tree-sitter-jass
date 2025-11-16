@@ -1,0 +1,71 @@
+//============================================================================
+// Complete JASS Example
+//============================================================================
+
+globals
+    // Constants
+    constant real PI = 3.14159
+    constant integer MAX_UNITS = 100
+    
+    // Variables
+    integer unitCount = 0
+    unit array playerUnits
+    boolean gameStarted = false
+endglobals
+
+//============================================================================
+// Native function declarations
+//============================================================================
+native CreateUnit takes player id, integer unitid, real x, real y, real face returns unit
+native BJDebugMsg takes string msg returns nothing
+native SquareRoot takes real x returns real
+native GetLocationX takes location loc returns real
+native GetLocationY takes location loc returns real
+
+//============================================================================
+// Type extensions
+//============================================================================
+type unitcode extends integer
+type destructablecode extends integer
+
+//============================================================================
+// Helper function to calculate distance
+//============================================================================
+function GetDistance takes real x1, real y1, real x2, real y2 returns real
+    local real dx = x2 - x1
+    local real dy = y2 - y1
+    return SquareRoot(dx * dx + dy * dy)
+endfunction
+
+//============================================================================
+// Function with control flow
+//============================================================================
+function ProcessUnits takes nothing returns nothing
+    local integer i = 0
+    
+    loop
+        exitwhen i >= unitCount
+        
+        if playerUnits[i] != null then
+            call BJDebugMsg("Processing unit")
+        endif
+        
+        set i = i + 1
+    endloop
+endfunction
+
+//============================================================================
+// Function using custom types
+//============================================================================
+function CreateUnitAtLoc takes player whichPlayer, unitcode unitId, location loc returns unit
+    return CreateUnit(whichPlayer, unitId, GetLocationX(loc), GetLocationY(loc), 0.0)
+endfunction
+
+//============================================================================
+// Main initialization
+//============================================================================
+function InitGame takes nothing returns nothing
+    set gameStarted = true
+    set unitCount = 0
+    call BJDebugMsg("Game initialized!")
+endfunction

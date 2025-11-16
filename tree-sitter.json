@@ -2,11 +2,11 @@
   "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
   "grammars": [
     {
-      "name": "vjass",
-      "camelcase": "VJASS",
-      "scope": "source.vjass",
+      "name": "jass",
+      "camelcase": "JASS",
+      "scope": "source.jass",
       "file-types": [
-        "vj"
+        "j", "jass"
       ]
     }
   ],
@@ -21,7 +21,7 @@
       }
     ],
     "links": {
-      "repository": "https://github.com/WarRaft/tree-sitter-.gitattributes\ngrammar.js\nCargo.tomljass"
+      "repository": "https://github.com/WarRaft/tree-sitter-jass"
     }
   },
   "bindings": {

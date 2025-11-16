@@ -1,0 +1,27 @@
+// Test JASS file
+globals
+    constant real PI = 3.14159
+    integer count = 0
+    unit array myUnits
+endglobals
+
+function Add takes integer a, integer b returns integer
+    return a + b
+endfunction
+
+function TestLogic takes nothing returns boolean
+    // Testing operator precedence: or has higher precedence than and
+    // false and true or true = false and (true or true) = false
+    return false and true or true
+endfunction
+
+function InitGame takes nothing returns nothing
+    local integer i = 0
+    set count = 10
+    
+    loop
+        exitwhen i >= count
+        call BJDebugMsg("Iteration: " + I2S(i))
+        set i = i + 1
+    endloop
+endfunction

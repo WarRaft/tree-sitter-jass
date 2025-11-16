@@ -1,8 +1,8 @@
 **/Cargo.lock
 package-lock.json
-.idea
+.idea/
 
-
+w
 # Rust artifacts
 target/
 

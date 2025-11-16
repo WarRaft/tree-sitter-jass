@@ -1,0 +1,6 @@
+function Test takes nothing returns nothing
+    loop
+        exitwhen true
+        call Print()
+    endloop
+endfunction

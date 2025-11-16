@@ -41,38 +41,39 @@ module.exports = grammar({
     ],
 
     conflicts: $ => [
-        [$.id, $.keywords]
+        [$.id, $.keywords],
+        [$.expr, $.function_call]
     ],
 
     rules: {
         program: $ => repeat($._block),
 
         id: _ => token(prec(-1, /[a-zA-Z_][a-zA-Z0-9_]*/)),
-        keywords: _ => choice('struct', 'endstruct', 'globals', 'endglobals', 'loop', 'endloop'),
+        keywords: _ => choice(
+            'globals', 'endglobals',
+            'function', 'endfunction',
+            'native',
+            'type', 'extends',
+            'if', 'then', 'else', 'elseif', 'endif',
+            'loop', 'endloop',
+            'set', 'call', 'return', 'exitwhen',
+            'local', 'constant', 'array',
+            'takes', 'returns', 'nothing',
+            'true', 'false', 'null',
+            'and', 'or', 'not'
+        ),
 
         _block: $ => choice(
             $.globals,
-            $.struct,
-            $.loop,
-            $.expr,
-        ),
-
-        struct: $ => seq(
-            alias(token('struct'), $.struct_),
-            repeat($._block),
-            alias(token('endstruct'), $.endstruct_)
+            $.function_statement,
+            $.native_statement,
+            $.type_statement,
         ),
 
         globals: $ => seq(
-            alias(token('globals'), $.globals_),
-            repeat($._block),
-            alias(token('endglobals'), $.endglobals_)
-        ),
-
-        loop: $ => seq(
-            alias(token('loop'), $.loop_),
-            repeat($._block),
-            alias(token('endloop'), $.endloop_)
+            'globals',
+            repeat($.var_stmt),
+            'endglobals'
         ),
 
         expr: $ => choice(
@@ -80,14 +81,14 @@ module.exports = grammar({
             $.number,
             $.float,
             $.string,
+            $.function_call,
 
             // https://learn.microsoft.com/en-us/cpp/cpp/cpp-built-in-operators-precedence-and-associativity?view=msvc-170
             // Group 1 precedence, no associativity
             // Scope resolution	::
 
             // Group 2 precedence, left to right associativity
-            prec.left(2, seq($.expr, '.', $.expr)), // Member selection (object or pointer)	. or ->
-            prec.left(2, seq('[', $.expr, ']')), // Array subscript	[]
+            prec.left(2, seq($.expr, '[', $.expr, ']')), // Array subscript	[]
             prec.left(2, seq('(', repeat($.expr), ')')), // Function call	()
             prec.left(2, seq($.expr, '++')), // Postfix increment	++
             prec.left(2, seq($.expr, '++')), // Postfix decrement	--
@@ -207,39 +208,24 @@ module.exports = grammar({
         },
 
         var_stmt: $ =>
-            prec.right(
-                PREC.DEFAULT,
-                seq(
-                    repeat(
-                        choice(
-                            alias('local', $.local),
-                            alias('constant', $.constant),
-                            alias('array', $.array),
-                        )
-                    ),
-                    field('type', $.id),
-                    $.var_decl,
-                    repeat(seq(',', $.var_decl))
-                )
+            seq(
+                repeat(choice('local', 'constant')),
+                field('type', $.id),
+                optional('array'),
+                $.var_decl,
+                repeat(seq(',', $.var_decl))
             ),
 
         var_decl: $ => seq(
             field('name', $.id),
-            optional(seq('=', $.expr)
-            )
+            optional(seq('=', $.expr))
         ),
 
         _var: $ =>
-            prec(
-                PREC.PRIORITY,
-                choice(
-                    $.id,
-                    seq($.prefix_exp, '[', $.expr, ']'),
-                    seq($.prefix_exp, '.', $.id)
-                )
+            choice(
+                $.id,
+                seq($.id, '[', $.expr, ']')
             ),
-
-        var_list: $ => seq($._var, repeat(seq(',', $._var))),
 
         string: $ =>
             seq(
@@ -249,43 +235,15 @@ module.exports = grammar({
             ),
 
         _statement: $ =>
-            prec.right(
-                PREC.STATEMENT,
-                seq(
-                    choice(
-                        $.var_stmt,
-                        $.function_call,
-                        $.do_statement,
-                        $.while_statement,
-                        $.repeat_statement,
-                        $.if_statement,
-                        $.function_statement
-                        // $.comment
-                    ),
-                )
-            ),
-
-        // Primitives {{{
-        function_name: $ => seq($.id),
-
-        function: $ => seq($.function_start, $.function_impl),
-
-        function_impl: $ =>
-            seq(
-                alias('(', $.function_body_paren),
-                optional($.parameter_list),
-                alias(')', $.function_body_paren),
-                alias(optional($._block), $.function_body),
-                alias('end', $.function_end)
-            ),
-
-        parameter_list: $ =>
             choice(
-                seq(
-                    prec.left(PREC.COMMA, seq($.id, repeat(seq(/,\s*/, $.id)))),
-                ),
+                $.var_stmt,
+                $.set_statement,
+                $.call_statement,
+                $.if_statement,
+                $.loop_statement,
+                $.return_statement,
+                $.exitwhen_statement,
             ),
-        // }}}
 
         unary_operation: $ =>
             prec.left(PREC.UNARY, seq(choice('not', '#', '-', '~'), $.expr)),
@@ -294,106 +252,107 @@ module.exports = grammar({
             prec.right(PREC.COMMA, seq($.id, repeat(seq(/,\s*/, $.id)))),
 
         return_statement: $ =>
-            prec(PREC.PRIORITY, seq('return', optional(seq($.expr, repeat(seq(',', $.expr)))))),
+            prec.right(seq('return', optional($.expr))),
 
-        break_statement: _ => 'break',
+        exitwhen_statement: $ =>
+            seq('exitwhen', $.expr),
 
-        // Blocks {{{
-        do_statement: $ =>
-            seq(alias('do', $.do_start), optional($._block), alias('end', $.do_end)),
-
-        while_statement: $ =>
+        set_statement: $ =>
             seq(
-                alias('while', $.while_start),
-                $.expr,
-                alias('do', $.while_do),
-                optional($._block),
-                alias('end', $.while_end)
+                'set',
+                field('variable', $._var),
+                '=',
+                field('value', $.expr)
             ),
 
-        repeat_statement: $ =>
+        call_statement: $ =>
+            seq('call', $.function_call),
+
+        // Blocks {{{
+        loop_statement: $ =>
             seq(
-                alias('repeat', $.repeat_start),
-                optional($._block),
-                alias('until', $.repeat_until),
-                $.expr
+                'loop',
+                repeat($._statement),
+                'endloop'
             ),
 
         if_statement: $ =>
             seq(
-                alias('if', $.if_start),
-                $.expr,
-                alias('then', $.if_then),
-                optional($._block),
+                'if',
+                field('condition', $.expr),
+                'then',
+                repeat($._statement),
                 repeat(
                     seq(
-                        alias('elseif', $.if_elseif),
-                        $.expr,
-                        alias('then', $.if_then),
-                        optional($._block)
+                        'elseif',
+                        field('condition', $.expr),
+                        'then',
+                        repeat($._statement)
                     )
                 ),
-                optional(seq(alias('else', $.if_else), optional($._block))),
-                alias('end', $.if_end)
+                optional(seq('else', repeat($._statement))),
+                'endif'
             ),
 
         function_start: () => 'function',
 
+        // Native function declaration
+        native_statement: $ =>
+            seq(
+                'native',
+                field('name', $.id),
+                'takes',
+                field('parameters', choice('nothing', $.parameter_list)),
+                'returns',
+                field('return_type', choice('nothing', $.id))
+            ),
+
+        // Type declaration
+        type_statement: $ =>
+            seq(
+                'type',
+                field('name', $.id),
+                'extends',
+                field('base', $.id)
+            ),
+
         function_statement: $ =>
-            prec.right(
-                PREC.DEFAULT,
-                seq(
-                    choice(
-                        seq(
-                            alias('local', $.local),
-                            $.function_start,
-                            field('name', $.id)
-                        ),
-                        seq($.function_start, /\s*/, field('name', $.function_name))
-                    ),
-                    $.function_impl
-                )
+            seq(
+                'function',
+                field('name', $.id),
+                'takes',
+                field('parameters', choice('nothing', $.parameter_list)),
+                'returns',
+                field('return_type', choice('nothing', $.id)),
+                repeat($._statement),
+                'endfunction'
+            ),
+
+        parameter_list: $ =>
+            seq(
+                $.parameter,
+                repeat(seq(',', $.parameter))
+            ),
+
+        parameter: $ =>
+            seq(
+                field('type', $.id),
+                field('name', $.id)
             ),
 
         // }}}
 
         // Function {{{
-        _prefix_exp: $ =>
-            choice(
-                $._var,
-                $.function_call,
-                seq('(', $.expr, ')')
-            ),
-
-        prefix_exp: $ => $._prefix_exp,
-
         function_call: $ =>
-            prec.right(
-                PREC.FUNCTION,
-                seq(field('prefix', $.prefix_exp), choice($._args, $._self_call))
-            ),
-
-        _args: $ => choice($._parentheses_call, $._string_call),
-
-        _parentheses_call: $ =>
             seq(
-                alias('(', $.function_call_paren),
+                field('name', $.id),
+                '(',
                 field('args', optional($.function_arguments)),
-                alias(')', $.function_call_paren)
+                ')'
             ),
-
-        _string_call: $ =>
-            field(
-                'args',
-                //  Decide if this is really the name we want to use.
-                alias($.string, $.string_argument)
-            ),
-
-        _self_call: $ =>
-            seq(alias(':', $.self_call_colon), $.id, $._args),
 
         function_arguments: $ =>
-            seq($.expr, optional(repeat(seq(',', $.expr)))),
+            seq($.expr, repeat(seq(',', $.expr))),
 
         // }}}
 
