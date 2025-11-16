@@ -59,7 +59,6 @@ module.exports = grammar({
             'set', 'call', 'return', 'exitwhen',
             'local', 'constant', 'array',
             'takes', 'returns', 'nothing',
-            'true', 'false', 'null',
             'and', 'or', 'not'
         ),
 
