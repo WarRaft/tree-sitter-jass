@@ -115,14 +115,14 @@ module.exports = grammar({
             // Group 4 precedence, left to right associativity
             // Pointer-to-member (objects or pointers)	.* or ->*
 
-            // Group 5 precedence, left to right associativity
-            prec.left(5, seq($.expr, '*', $.expr)), // Multiplication	*
-            prec.left(5, seq($.expr, '/', $.expr)), // Division	/
+            // Group 5 precedence, left to right associativity (HIGHER precedence in tree-sitter)
+            prec.left(6, seq($.expr, '*', $.expr)), // Multiplication	*
+            prec.left(6, seq($.expr, '/', $.expr)), // Division	/
             // Modulus	%
 
-            // Group 6 precedence, left to right associativity
-            prec.left(6, seq($.expr, '+', $.expr)), // Addition	+
-            prec.left(6, seq($.expr, '-', $.expr)), // Subtraction	-
+            // Group 6 precedence, left to right associativity (LOWER precedence in tree-sitter)
+            prec.left(5, seq($.expr, '+', $.expr)), // Addition	+
+            prec.left(5, seq($.expr, '-', $.expr)), // Subtraction	-
 
             // Group 7 precedence, left to right associativity
             // Left shift	<<
@@ -260,7 +260,8 @@ module.exports = grammar({
         set_statement: $ =>
             seq(
                 'set',
-                field('variable', $._var),
+                field('variable', $.id),
+                optional(seq('[', field('index', $.expr), ']')),
                 '=',
                 field('value', $.expr)
             ),

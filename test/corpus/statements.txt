@@ -1,0 +1,403 @@
+==================
+Comments
+==================
+
+// Single line comment
+// Another comment
+
+---
+
+(program
+  (comment)
+  (comment))
+
+==================
+Globals - simple
+==================
+
+globals
+    integer count = 0
+    real PI = 3.14
+endglobals
+
+---
+
+(program
+  (globals
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)
+        (expr (number))))
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)
+        (expr (float))))))
+
+==================
+Globals - constant
+==================
+
+globals
+    constant integer MAX = 100
+endglobals
+
+---
+
+(program
+  (globals
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)
+        (expr (number))))))
+
+==================
+Globals - array
+==================
+
+globals
+    unit array myUnits
+endglobals
+
+---
+
+(program
+  (globals
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)))))
+
+==================
+Native declaration
+==================
+
+native CreateUnit takes player id, integer unitid, real x, real y returns unit
+native BJDebugMsg takes string msg returns nothing
+
+---
+
+(program
+  (native_statement
+    name: (id)
+    parameters: (parameter_list
+      (parameter type: (id) name: (id))
+      (parameter type: (id) name: (id))
+      (parameter type: (id) name: (id))
+      (parameter type: (id) name: (id)))
+    return_type: (id))
+  (native_statement
+    name: (id)
+    parameters: (parameter_list
+      (parameter type: (id) name: (id)))))
+
+==================
+Type declaration
+==================
+
+type unitcode extends integer
+type destructablecode extends integer
+
+---
+
+(program
+  (type_statement
+    name: (id)
+    base: (id))
+  (type_statement
+    name: (id)
+    base: (id)))
+
+==================
+Function - simple
+==================
+
+function HelloWorld takes nothing returns nothing
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)))
+
+==================
+Function - with parameters
+==================
+
+function Add takes integer a, integer b returns integer
+    return a + b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    parameters: (parameter_list
+      (parameter type: (id) name: (id))
+      (parameter type: (id) name: (id)))
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Function - with locals
+==================
+
+function Test takes nothing returns nothing
+    local integer i = 0
+    local real x
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)
+        (expr (number))))
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)))))
+
+==================
+Set statement
+==================
+
+function Test takes nothing returns nothing
+    set count = 10
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (set_statement
+      variable: (id)
+      value: (expr (number)))))
+
+==================
+Set statement - array
+==================
+
+function Test takes nothing returns nothing
+    set myArray[0] = 100
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (set_statement
+      variable: (id)
+      index: (expr (number))
+      value: (expr (number)))))
+
+==================
+Call statement
+==================
+
+function Test takes nothing returns nothing
+    call Print("Hello")
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (call_statement
+      (function_call
+        name: (id)
+        args: (function_arguments
+          (expr (string)))))))
+
+==================
+Return statement
+==================
+
+function GetValue takes nothing returns integer
+    return 42
+endfunction
+
+function DoNothing takes nothing returns nothing
+    return
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (number))))
+  (function_statement
+    name: (id)
+    (return_statement)))
+
+==================
+If statement - simple
+==================
+
+function Test takes nothing returns nothing
+    if true then
+        call Print("Yes")
+    endif
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (if_statement
+      condition: (expr (id))
+      (call_statement
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr (string))))))))
+
+==================
+If statement - with else
+==================
+
+function Test takes nothing returns nothing
+    if x > 0 then
+        call Print("Positive")
+    else
+        call Print("Not positive")
+    endif
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (if_statement
+      condition: (expr
+        (expr (id))
+        (expr (number)))
+      (call_statement
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr (string)))))
+      (call_statement
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr (string))))))))
+
+==================
+If statement - with elseif
+==================
+
+function Test takes nothing returns nothing
+    if x > 0 then
+        call Print("Positive")
+    elseif x == 0 then
+        call Print("Zero")
+    else
+        call Print("Negative")
+    endif
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (if_statement
+      condition: (expr
+        (expr (id))
+        (expr (number)))
+      (call_statement
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr (string)))))
+      condition: (expr
+        (expr (id))
+        (expr (number)))
+      (call_statement
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr (string)))))
+      (call_statement
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr (string))))))))
+
+==================
+Loop statement
+==================
+
+function Test takes nothing returns nothing
+    loop
+        exitwhen true
+    endloop
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (loop_statement
+      (exitwhen_statement
+        (expr (id))))))
+
+==================
+Loop with statements
+==================
+
+function Test takes nothing returns nothing
+    local integer i = 0
+    loop
+        exitwhen i >= 10
+        call Print("Loop")
+        set i = i + 1
+    endloop
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)
+        (expr (number))))
+    (loop_statement
+      (exitwhen_statement
+        (expr
+          (expr (id))
+          (expr (number))))
+      (call_statement
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr (string)))))
+      (set_statement
+        variable: (id)
+        value: (expr
+          (expr (id))
+          (expr (number)))))))

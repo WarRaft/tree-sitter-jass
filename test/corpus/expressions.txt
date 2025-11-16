@@ -1,0 +1,477 @@
+==================
+Addition
+==================
+
+function Test takes nothing returns integer
+    return a + b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Subtraction
+==================
+
+function Test takes nothing returns integer
+    return a - b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Multiplication
+==================
+
+function Test takes nothing returns integer
+    return a * b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Division
+==================
+
+function Test takes nothing returns integer
+    return a / b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Unary negation
+==================
+
+function Test takes nothing returns integer
+    return -x
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))))))
+
+==================
+Unary plus
+==================
+
+function Test takes nothing returns integer
+    return +x
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))))))
+
+==================
+Equal
+==================
+
+function Test takes nothing returns boolean
+    return a == b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Not equal
+==================
+
+function Test takes nothing returns boolean
+    return a != b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Less than
+==================
+
+function Test takes nothing returns boolean
+    return a < b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Greater than
+==================
+
+function Test takes nothing returns boolean
+    return a > b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Less than or equal
+==================
+
+function Test takes nothing returns boolean
+    return a <= b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Greater than or equal
+==================
+
+function Test takes nothing returns boolean
+    return a >= b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Logical AND
+==================
+
+function Test takes nothing returns boolean
+    return a and b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Logical OR
+==================
+
+function Test takes nothing returns boolean
+    return a or b
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Logical NOT
+==================
+
+function Test takes nothing returns boolean
+    return not a
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))))))
+
+==================
+OR has higher precedence than AND
+==================
+
+function Test takes nothing returns boolean
+    return false and true or true
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr
+          (expr (id))
+          (expr (id)))
+        (expr (id))))))
+
+==================
+Prefix increment
+==================
+
+function Test takes nothing returns integer
+    return ++x
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))))))
+
+==================
+Prefix decrement
+==================
+
+function Test takes nothing returns integer
+    return --x
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))))))
+
+==================
+Postfix increment
+==================
+
+function Test takes nothing returns integer
+    return x++
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))))))
+
+==================
+Postfix decrement
+==================
+
+function Test takes nothing returns integer
+    return x
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (id)))))
+
+==================
+Array subscript
+==================
+
+function Test takes nothing returns integer
+    return arr[5]
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (number))))))
+
+==================
+Function call in expression
+==================
+
+function Test takes nothing returns integer
+    return Abs(-5)
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr
+              (expr (number)))))))))
+
+==================
+Complex expression
+==================
+
+function Test takes nothing returns integer
+    return a + b * c
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr
+          (expr (id))
+          (expr (id)))))))
+
+==================
+Addition with variables
+==================
+
+function Test takes nothing returns integer
+    return x + y
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (expr (id))
+        (expr (id))))))
+
+==================
+Nested function calls
+==================
+
+function Test takes nothing returns integer
+    return Abs(GetValue())
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (function_call
+          name: (id)
+          args: (function_arguments
+            (expr
+              (function_call
+                name: (id)))))))))

@@ -1,0 +1,186 @@
+==================
+Integer - decimal
+==================
+
+function Test takes nothing returns integer
+    return 42
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (number)))))
+
+==================
+Integer - hexadecimal
+==================
+
+function Test takes nothing returns integer
+    return 0xFF
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (number)))))
+
+==================
+Integer - binary
+==================
+
+function Test takes nothing returns integer
+    return 0b1010
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (number)))))
+
+==================
+Integer - with separators
+==================
+
+function Test takes nothing returns integer
+    return 1_000_000
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (number)))))
+
+==================
+Float - decimal
+==================
+
+function Test takes nothing returns real
+    return 3.14
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (float)))))
+
+==================
+Float - scientific notation
+==================
+
+function Test takes nothing returns real
+    return 2.5e10
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (float)))))
+
+==================
+Float - with suffix
+==================
+
+function Test takes nothing returns real
+    return 1.0f
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (float)))))
+
+==================
+Identifier
+==================
+
+function Test takes nothing returns integer
+    return myVar
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (id)))))
+
+==================
+Boolean - true
+==================
+
+function Test takes nothing returns boolean
+    return true
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (id)))))
+
+==================
+Boolean - false
+==================
+
+function Test takes nothing returns boolean
+    return false
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (id)))))
+
+==================
+Null
+==================
+
+function Test takes nothing returns unit
+    return null
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (id)))))
