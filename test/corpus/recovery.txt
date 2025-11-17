@@ -1,0 +1,15 @@
+==================
+Error recovery - incomplete blocks
+==================
+
+Tree-sitter автоматически создаёт MISSING узлы для незакрытых блоков:
+- function без endfunction -> MISSING "endfunction"
+- globals без endglobals -> MISSING "endglobals"
+
+Эти узлы видны в parse output и могут быть использованы IDE для подсказок.
+Но их сложно тестировать через corpus тесты.
+
+Примеры можно посмотреть запустив:
+  echo 'function Test takes nothing returns nothing\n    return\n' | npx tree-sitter parse
+
+
