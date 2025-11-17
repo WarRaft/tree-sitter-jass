@@ -199,6 +199,10 @@
         {
           "type": "type_statement",
           "named": true
+        },
+        {
+          "type": "var_stmt",
+          "named": true
         }
       ]
     }
@@ -431,6 +435,10 @@
         {
           "type": "type_statement",
           "named": true
+        },
+        {
+          "type": "var_stmt",
+          "named": true
         }
       ]
     }
@@ -636,6 +644,11 @@
     }
   },
   {
+    "type": "string",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "type_statement",
     "named": true,
     "fields": {
@@ -715,6 +728,10 @@
   },
   {
     "type": "!=",
+    "named": false
+  },
+  {
+    "type": "\"",
     "named": false
   },
   {
@@ -897,10 +914,6 @@
   {
     "type": "set",
     "named": false
-  },
-  {
-    "type": "string",
-    "named": true
   },
   {
     "type": "takes",

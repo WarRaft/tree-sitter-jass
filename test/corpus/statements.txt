@@ -278,7 +278,7 @@ endfunction
   (function_statement
     name: (id)
     (if_statement
-      condition: (expr (id))
+      condition: (expr (true))
       (call_statement
         (function_call
           name: (id)
