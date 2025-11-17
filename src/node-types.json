@@ -199,10 +199,6 @@
         {
           "type": "type_statement",
           "named": true
-        },
-        {
-          "type": "var_stmt",
-          "named": true
         }
       ]
     }

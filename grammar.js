@@ -48,23 +48,56 @@ const PREC = {
 module.exports = grammar({
     name: 'jass',
 
-    word: $ => $.id,
+    // Like Lua, we DON'T use word mechanism
+    // This allows keywords to be prioritized over identifiers
 
     extras: $ => [/\n/, /\s/, $.comment],
 
 
+    // Conflicts: GLR parsing ambiguities that need manual resolution
+    // Only list conflicts that tree-sitter cannot resolve automatically
     conflicts: $ => [
-        [$.expr, $.function_call],
-        [$.var_stmt, $.expr],
-        [$.globals],
-        [$.function_statement],
-        [$.loop_statement],
-        [$.if_statement],
+        [$.var_stmt, $.expr],  // Type name at start looks like identifier in expr
+        [$._statement],  // Statement keywords can appear in expr context - prefer statement
+        [$.function_statement, $.expr],  // Prefer function_statement when seeing 'function'
+        [$.globals, $.expr],  // Prefer globals when seeing 'globals'
     ],
 
     rules: {
         program: $ => repeat($._statement),
 
+        // Explicit keyword tokens (like in Lua)
+        // By defining these as separate rules, tree-sitter knows to look for these
+        // specifically, rather than treating them as generic identifiers
+        // Using token() gives them priority over word patterns, like braces in Rust
+        _kw_function: _ => token('function'),
+        _kw_endfunction: _ => token('endfunction'),
+        _kw_globals: _ => token('globals'),
+        _kw_endglobals: _ => token('endglobals'),
+        _kw_loop: _ => token('loop'),
+        _kw_endloop: _ => token('endloop'),
+        _kw_if: _ => token('if'),
+        _kw_then: _ => token('then'),
+        _kw_endif: _ => token('endif'),
+
+        // Reserved keywords that cannot be used as identifiers
+        // This prevents 'function', 'endfunction', etc. from being parsed as id in expressions
+        _reserved_keyword: _ => choice(
+            'function', 'endfunction',
+            'globals', 'endglobals',
+            'if', 'then', 'elseif', 'else', 'endif',
+            'loop', 'endloop',
+            'native', 'type', 'extends',
+            'takes', 'returns', 'nothing',
+            'local', 'set', 'call', 'return', 'exitwhen',
+            'constant', 'array',
+            'and', 'or', 'not',
+            'true', 'false', 'null'
+        ),
+
+        // Identifier: any word that is NOT a reserved keyword
+        // Important: By NOT using token(), we let tree-sitter give priority to
+        // string literals ('function', 'endfunction', etc.) when they appear first in rules
         id: _ => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
         // STATEMENT RULES
@@ -77,7 +110,10 @@ module.exports = grammar({
         // This is the key design decision: we don't create special statement types
         // for assignments or function calls. They're just expressions that can be
         // used as statements.
-        _statement: $ => choice(
+        //
+        // IMPORTANT: Like Lua, we wrap statements in prec.right() to give them
+        // priority over expressions when keywords appear
+        _statement: $ => prec.right(15, choice(
             // Block statements (keywords that define scope)
             $.globals,
             $.function_statement,
@@ -97,7 +133,7 @@ module.exports = grammar({
             // Expression statements (everything else is just an expression)
             // Examples: a = b, myFunc(), x++, a[5] = 10, etc.
             $.expr
-        ),
+        )),
 
         // BLOCK NESTING
         // ==============
@@ -116,10 +152,14 @@ module.exports = grammar({
             $.type_statement
         ),
 
-        // Statements allowed inside loop blocks
-        // Note: includes all blocks (_block) and expressions
-        _loop_statement: $ => choice(
-            $._block,
+        // Statements allowed inside function bodies
+        // NOTE: We allow nested blocks (globals, function, etc.) for flexibility
+        // This means unclosed blocks will consume siblings - this is normal tree-sitter behavior
+        _function_statement: $ => choice(
+            $.globals,
+            $.function_statement,
+            $.native_statement,
+            $.type_statement,
             $.if_statement,
             $.loop_statement,
             $.return_statement,
@@ -127,34 +167,67 @@ module.exports = grammar({
             $.local_statement,
             $.set_statement,
             $.call_statement,
-            $.expr              // Any expression can be a statement
+            $.expr
+        ),
+
+        // Statements allowed inside loop blocks
+        _loop_statement: $ => choice(
+            $.globals,
+            $.function_statement,
+            $.native_statement,
+            $.type_statement,
+            $.if_statement,
+            $.loop_statement,
+            $.return_statement,
+            $.exitwhen_statement,
+            $.local_statement,
+            $.set_statement,
+            $.call_statement,
+            $.expr
         ),
 
         // Statements allowed inside globals blocks
-        // Note: var_stmt is only allowed here, plus everything from loops
         _globals_statement: $ => choice(
-            $.var_stmt,          // Variable declarations
-            $._loop_statement    // Everything else
+            $.var_stmt,
+            $.globals,
+            $.function_statement,
+            $.native_statement,
+            $.type_statement,
+            $.if_statement,
+            $.loop_statement,
+            $.return_statement,
+            $.exitwhen_statement,
+            $.local_statement,
+            $.set_statement,
+            $.call_statement,
+            $.expr
         ),
 
         // BLOCK STATEMENTS
         // ================
         // All blocks require closing keywords (endloop, endglobals, etc.)
         // When missing, tree-sitter creates MISSING nodes for error recovery
+        //
+        // Key insight: By making closing keywords REQUIRED (not optional),
+        // tree-sitter will stop parsing the block when it encounters another
+        // top-level keyword (like 'function'), creating a MISSING node instead
+        // of consuming the sibling block.
 
         loop_statement: $ =>
             seq(
-                'loop',
-                repeat($._loop_statement),
-                'endloop'           // Required: creates MISSING node if absent
+                $._kw_loop,
+                optional(repeat1($._loop_statement)),
+                $._kw_endloop
             ),
 
-        globals: $ => seq(
-            'globals',
-            repeat($._globals_statement),
-            'endglobals'            // Required: creates MISSING node if absent
-        ),
-
+        // VARIABLE DECLARATIONS
+        // =====================
+        // Syntax: [constant] type [array] name [= value], name [= value], ...
+        // Examples:
+        //   integer x
+        //   constant real PI = 3.14
+        //   unit array units
+        //   integer a = 1, b = 2, c = 3
         var_stmt: $ =>
             seq(
                 optional('constant'),
@@ -304,20 +377,20 @@ module.exports = grammar({
 
         if_statement: $ =>
             seq(
-                'if',
+                $._kw_if,
                 optional(field('condition', $.expr)),
-                'then',
-                repeat($._statement),
+                $._kw_then,
+                optional(repeat1($._statement)),
                 repeat(
                     seq(
                         'elseif',
                         optional(field('condition', $.expr)),
-                        'then',
-                        repeat($._statement)
+                        $._kw_then,
+                        optional(repeat1($._statement))
                     )
                 ),
-                optional(seq('else', repeat($._statement))),
-                'endif'
+                optional(seq('else', optional(repeat1($._statement)))),
+                $._kw_endif
             ),
 
         function_start: () => 'function',
@@ -342,17 +415,23 @@ module.exports = grammar({
                 field('base', $.id)
             ),
 
-        function_statement: $ =>
-            seq(
-                'function',
+        function_statement: $ => prec.right(20, seq(
+                $._kw_function,
                 field('name', $.id),
                 'takes',
                 field('parameters', choice('nothing', $.parameter_list)),
                 'returns',
                 field('return_type', choice('nothing', $.id)),
-                repeat($._statement),
-                'endfunction'
-            ),
+                // Like Lua: body can be empty (optional) but if present, requires at least 1 statement
+                optional(repeat1($._function_statement)),
+                $._kw_endfunction
+            )),
+
+        globals: $ => prec.right(20, seq(
+            $._kw_globals,
+            optional(repeat1($._globals_statement)),
+            $._kw_endglobals
+        )),
 
         parameter_list: $ =>
             seq(
