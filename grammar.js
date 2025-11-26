@@ -52,14 +52,14 @@ const PREC = {
 module.exports = grammar({
     name: 'jass',
 
-
     externals: $ => [
-        $.id,
         $.comment,
         $._string_content
     ],
 
     extras: $ => [/\n/, /\s/, $.comment],
+
+    // word: $ => $.id,
 
     conflicts: $ => [
         [$.var_stmt, $.expr],
@@ -68,8 +68,11 @@ module.exports = grammar({
     rules: {
         program: $ => repeat($._statement),
 
+        // Identifier: inline token (word mechanism ensures keywords checked first)
+        id: _ => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
-        _statement: $ => prec.right(PREC.STATEMENT, choice(
+
+        _statement: $ => choice(
             $.globals,
             $.function_statement,
             $.native_statement,
@@ -83,14 +86,13 @@ module.exports = grammar({
             $.set_statement,
             $.call_statement,
             $.expr
-        )),
+        ),
 
-        // Use explicit block precedence for consistency
-        loop_statement: $ => prec.right(PREC.BLOCK, seq(
+        loop_statement: $ => seq(
             'loop',
-            optional(repeat1($._statement)),
+            repeat($._statement),
             'endloop'
-        )),
+        ),
 
         var_stmt: $ => seq(
             optional('constant'),
@@ -106,49 +108,30 @@ module.exports = grammar({
         ),
 
         expr: $ => choice(
-            // Literals
             $.number,
             $.float,
             $.string,
             $.id,
             $.function_call,
-
-            // Assignment operator (lowest precedence)
             prec.right(PREC.ASSIGNMENT, seq($.expr, '=', $.expr)),
-
-            // Array subscript
             prec.left(PREC.SUBSCRIPT, seq($.expr, '[', $.expr, ']')),
-
-            // Postfix operators
             prec.left(PREC.POSTFIX, seq($.expr, '++')),
             prec.left(PREC.POSTFIX, seq($.expr, '--')),
-
-            // Prefix operators
             prec.right(PREC.UNARY, seq('++', $.expr)),
             prec.right(PREC.UNARY, seq('--', $.expr)),
             prec.right(PREC.UNARY, seq('not', $.expr)),
             prec.right(PREC.UNARY, seq('-', $.expr)),
             prec.right(PREC.UNARY, seq('+', $.expr)),
-
-            // Multiplicative operators
             prec.left(PREC.MULTIPLICATIVE, seq($.expr, '*', $.expr)),
             prec.left(PREC.MULTIPLICATIVE, seq($.expr, '/', $.expr)),
-
-            // Additive operators
             prec.left(PREC.ADDITIVE, seq($.expr, '+', $.expr)),
             prec.left(PREC.ADDITIVE, seq($.expr, '-', $.expr)),
-
-            // Relational operators
             prec.left(PREC.RELATIONAL, seq($.expr, '<', $.expr)),
             prec.left(PREC.RELATIONAL, seq($.expr, '>', $.expr)),
             prec.left(PREC.RELATIONAL, seq($.expr, '<=', $.expr)),
             prec.left(PREC.RELATIONAL, seq($.expr, '>=', $.expr)),
-
-            // Equality operators
             prec.left(PREC.EQUALITY, seq($.expr, '==', $.expr)),
             prec.left(PREC.EQUALITY, seq($.expr, '!=', $.expr)),
-
-            // Logical operators
             prec.left(PREC.LOGICAL_AND, seq($.expr, 'and', $.expr)),
             prec.left(PREC.LOGICAL_OR, seq($.expr, 'or', $.expr))
         ),
@@ -194,89 +177,76 @@ module.exports = grammar({
         _id_list: $ =>
             seq($.id, repeat(seq(',', $.id))),
 
-        return_statement: $ =>
-            prec.right(seq('return', optional($.expr))),
+        return_statement: $ => prec.right(seq('return', optional($.expr))),
 
-        exitwhen_statement: $ =>
-            seq('exitwhen', $.expr),
+        exitwhen_statement: $ => seq('exitwhen', $.expr),
 
-        local_statement: $ =>
-            seq(
-                'local',
-                optional('constant'),
-                field('type', $.id),
-                optional('array'),
-                field('name', $.id),
-                optional(seq('=', field('value', $.expr)))
-            ),
+        local_statement: $ => seq(
+            'local',
+            optional('constant'),
+            field('type', $.id),
+            optional('array'),
+            field('name', $.id),
+            optional(seq('=', field('value', $.expr)))
+        ),
 
-        set_statement: $ =>
-            seq(
-                'set',
-                field('variable', $.id),
-                optional(seq('[', field('index', $.expr), ']')),
-                '=',
-                field('value', $.expr)
-            ),
+        set_statement: $ => seq(
+            'set',
+            field('variable', $.id),
+            optional(seq('[', field('index', $.expr), ']')),
+            '=',
+            field('value', $.expr)
+        ),
 
-        call_statement: $ =>
-            seq(
-                'call',
-                $.function_call
-            ),
+        call_statement: $ => seq('call', $.function_call),
 
-        if_statement: $ =>
-            seq(
-                'if',
+        if_statement: $ => seq(
+            'if',
+            optional(field('condition', $.expr)),
+            'then',
+            repeat($._statement),
+            repeat(seq(
+                'elseif',
                 optional(field('condition', $.expr)),
                 'then',
-                optional(repeat1($._statement)),
-                repeat(
-                    seq(
-                        'elseif',
-                        optional(field('condition', $.expr)),
-                        'then',
-                        optional(repeat1($._statement))
-                    )
-                ),
-                optional(seq('else', optional(repeat1($._statement)))),
-                'endif'
-            ),
-
-        native_statement: $ =>
-            seq(
-                'native',
-                field('name', $.id),
-                'takes',
-                field('parameters', choice('nothing', $.parameter_list)),
-                'returns',
-                field('return_type', choice('nothing', $.id))
-            ),
-
-        type_statement: $ =>
-            seq(
-                'type',
-                field('name', $.id),
-                'extends',
-                field('base', $.id)
-            ),
-
-        function_statement: $ => prec.right(PREC.BLOCK, seq(
-                'function',
-                field('name', $.id),
-                'takes',
-                field('parameters', choice('nothing', $.parameter_list)),
-                'returns',
-                field('return_type', choice('nothing', $.id)),
-                optional(repeat1($._statement)),
-                'endfunction'
+                repeat($._statement)
             )),
+            optional(seq('else', repeat($._statement))),
+            'endif'
+        ),
 
-        globals: $ => prec.right(PREC.BLOCK, seq(
+        native_statement: $ => seq(
+            'native',
+            field('name', $.id),
+            'takes',
+            field('parameters', choice('nothing', $.parameter_list)),
+            'returns',
+            field('return_type', choice('nothing', $.id))
+        ),
+
+        type_statement: $ => seq(
+            'type',
+            field('name', $.id),
+            'extends',
+            field('base', $.id)
+        ),
+
+        function_statement: $ => seq(
+            'function',
+            field('name', $.id),
+            'takes',
+            field('parameters', choice('nothing', $.parameter_list)),
+            'returns',
+            field('return_type', choice('nothing', $.id)),
+            repeat($._statement),
+            'endfunction'
+        ),
+
+        globals: $ => seq(
             'globals',
-            optional(repeat1($._statement)),
+            repeat($._statement),
             'endglobals'
-        )),
+        ),
 
         parameter_list: $ =>
             seq(
