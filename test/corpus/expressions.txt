@@ -408,7 +408,7 @@ endfunction
     (return_statement
       (expr
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr
               (expr (number)))))))))
@@ -470,8 +470,109 @@ endfunction
     (return_statement
       (expr
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr
               (function_call
-                name: (id)))))))))
+                name: (expr (id))))))))))
+
+==================
+Function reference as argument
+==================
+
+call TimerStart(t, 0.035, true, function Two)
+
+---
+
+(program
+  (call_statement
+    (function_call
+      name: (expr (id))
+      args: (function_arguments
+        (expr (id))
+        (expr (float))
+        (expr (id))
+        (expr (function_ref name: (id)))))))
+
+==================
+Parenthesized expression
+==================
+
+function Test takes nothing returns integer
+    return (a + b)
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (parens
+          (expr
+            (expr (id))
+            (expr (id))))))))
+
+==================
+Nested parenthesized expressions
+==================
+
+function Test takes nothing returns integer
+    return (a * (b + c))
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr
+        (parens
+          (expr
+            (expr (id))
+            (expr
+              (parens
+                (expr
+                  (expr (id))
+                  (expr (id)))))))))))
+
+==================
+Complex call with parenthesized args
+==================
+
+call DamageUnit(Source, Target, (.85 * (GetState(Target, MAX) - GetState(Target, CUR))), "magical")
+
+---
+
+(program
+  (call_statement
+    (function_call
+      name: (expr (id))
+      args: (function_arguments
+        (expr (id))
+        (expr (id))
+        (expr
+          (parens
+            (expr
+              (expr (float))
+              (expr
+                (parens
+                  (expr
+                    (expr
+                      (function_call
+                        name: (expr (id))
+                        args: (function_arguments
+                          (expr (id))
+                          (expr (id)))))
+                    (expr
+                      (function_call
+                        name: (expr (id))
+                        args: (function_arguments
+                          (expr (id))
+                          (expr (id)))))))))))
+        (expr (string))))))
+

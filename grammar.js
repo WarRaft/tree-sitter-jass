@@ -42,7 +42,8 @@ const PREC = {
     MULTIPLICATIVE: 17, // * /
     UNARY: 18,          // not - + ++ --
     POSTFIX: 19,        // ++ --
-    SUBSCRIPT: 20,      // [] (highest precedence)
+    CALL: 20,           // function_call: id(...)
+    SUBSCRIPT: 21,      // [] (highest precedence)
 
     // Grammar-structural precedences (use these instead of magic numbers)
     STATEMENT: 15,      // precedence for generic statements over expr
@@ -55,6 +56,7 @@ module.exports = grammar({
     externals: $ => [
         $.comment,
         $._string_content,
+        $.rawcode,
         $._id_token,
         // Virtual closing tokens emitted by scanner when a closing keyword
         // for an outer block is seen while an inner block is still open.
@@ -118,12 +120,17 @@ module.exports = grammar({
 
         expr: $ => choice(
             $.number,
+            $.rawcode,
             $.float,
             $.string,
             $.id,
+            $.function_ref,
+            // Parenthesized expression for grouping: (a + b)
+            $.parens,
+            // Function call: expr(args) — like subscript, call is a postfix operator
             $.function_call,
             prec.right(PREC.ASSIGNMENT, seq($.expr, '=', $.expr)),
-            prec.left(PREC.SUBSCRIPT, seq($.expr, '[', $.expr, ']')),
+            prec.left(PREC.CALL, seq($.expr, '[', $.expr, ']')),
             prec.left(PREC.POSTFIX, seq($.expr, '++')),
             prec.left(PREC.POSTFIX, seq($.expr, '--')),
             prec.right(PREC.UNARY, seq('++', $.expr)),
@@ -164,6 +171,8 @@ module.exports = grammar({
             ))
         },
 
+        // Floating-point literals: 1.2, .3, 4., 1e5, 1.2e-3
+        // All three dot forms are valid: digits.digits, .digits, digits.
         float: _ => {
             const separator = '_'
             const decimal = /[0-9]+/
@@ -172,14 +181,24 @@ module.exports = grammar({
 
             return token(seq(
                 choice(
+                    // 1e5, 1E-3 (integer with exponent)
                     seq(decimalDigits, exponent, optional(/[fF]/)),
-                    seq(optional(decimalDigits), '.', repeat1(decimalDigits), optional(exponent), optional(/[fF]/)),
+                    // .3, .3e5 (leading dot, digits required after)
+                    seq('.', decimalDigits, optional(exponent), optional(/[fF]/)),
+                    // 1.2, 1.2e5 (digits, dot, digits)
+                    seq(decimalDigits, '.', decimalDigits, optional(exponent), optional(/[fF]/)),
+                    // 4. (trailing dot, no digits after)
+                    seq(decimalDigits, '.'),
+                    // 1f (integer with float suffix)
                     seq(decimalDigits, /[fF]/),
                 ),
             ))
         },
 
-        // String literals with escape sequences handled by external scanner
+        // FourCC / rawcode integer literal: 'xxxx' (4 chars packed into 32-bit int)
+        // No escape sequences, newlines allowed — handled by external scanner
+
+        // String literal in double quotes — JASS has NO escape sequences
         string: $ => seq('"', optional($._string_content), '"'),
 
         // Helper: comma-separated list of identifiers
@@ -207,7 +226,7 @@ module.exports = grammar({
             field('value', $.expr)
         ),
 
-        call_statement: $ => seq('call', $.function_call),
+        call_statement: $ => prec(PREC.STATEMENT, seq('call', $.function_call)),
 
         if_statement: $ => seq(
             'if',
@@ -270,17 +289,28 @@ module.exports = grammar({
                 field('name', $.id)
             ),
 
+        // FUNCTION REFERENCE
+        // ==================
+        // 'function Name' expression — passes a function as a value (code type)
+        // Example: call TimerStart(t, 0.035, true, function MyCallback)
+        function_ref: $ => seq('function', field('name', $.id)),
+
+        // PARENTHESIZED EXPRESSION
+        // ========================
+        // Grouping: (expr) — NOT a function call, just precedence grouping
+        parens: $ => seq('(', $.expr, ')'),
+
         // FUNCTION CALLS
         // ==============
-        // Function call expression: name(arg1, arg2, ...)
-        // This is an EXPRESSION, so it can be used anywhere expressions are allowed
+        // Function call expression: expr(arg1, arg2, ...)
+        // This is a postfix operator on expr, like subscript expr[i]
         function_call: $ =>
-            seq(
-                field('name', $.id),
+            prec.left(PREC.CALL, seq(
+                field('name', $.expr),
                 '(',
                 field('args', optional($.function_arguments)),
                 ')'
-            ),
+            )),
 
         // Function arguments: expr, expr, ...
         function_arguments: $ =>

@@ -5,6 +5,7 @@
 enum TokenType {
     COMMENT,
     STRING_CONTENT,
+    RAWCODE,
     ID_TOKEN,
     VIRTUAL_ENDLOOP,
     VIRTUAL_ENDGLOBALS,
@@ -78,27 +79,23 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
     bool error_recovery =
         valid_symbols[COMMENT] &&
         valid_symbols[STRING_CONTENT] &&
+        valid_symbols[RAWCODE] &&
         valid_symbols[ID_TOKEN] &&
         valid_symbols[VIRTUAL_ENDLOOP] &&
         valid_symbols[VIRTUAL_ENDGLOBALS] &&
         valid_symbols[VIRTUAL_ENDFUNCTION] &&
         valid_symbols[VIRTUAL_ENDIF];
 
-    // String content — only when genuinely inside a string (not error recovery)
+    // String content — JASS has NO escape sequences, everything is literal
     if (valid_symbols[STRING_CONTENT] && !error_recovery) {
         lexer->result_symbol = STRING_CONTENT;
         bool has_content = false;
         while (true) {
             if (lexer->lookahead == '"' || lexer->lookahead == 0) {
                 return has_content;
-            } else if (lexer->lookahead == '\\') {
-                advance(lexer);
-                if (lexer->lookahead != 0) advance(lexer);
-                has_content = true;
-            } else {
-                advance(lexer);
-                has_content = true;
             }
+            advance(lexer);
+            has_content = true;
         }
     }
 
@@ -107,6 +104,22 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
            lexer->lookahead == '\r' || lexer->lookahead == '\n') {
         skip_ws(lexer);
     }
+
+    // Rawcode (FourCC) literal: 'xxxx' — no escapes, newlines allowed
+    if (valid_symbols[RAWCODE] && !error_recovery && lexer->lookahead == '\'') {
+        advance(lexer);
+        while (lexer->lookahead != '\'' && lexer->lookahead != 0) {
+            advance(lexer);
+        }
+        if (lexer->lookahead == '\'') {
+            advance(lexer);
+            lexer->mark_end(lexer);
+            lexer->result_symbol = RAWCODE;
+            return true;
+        }
+        return false;
+    }
+
 
     // --- Virtual closing tokens ---
     //

@@ -249,7 +249,7 @@ endfunction
     name: (id)
     (call_statement
       (function_call
-        name: (id)
+        name: (expr (id))
         args: (function_arguments
           (expr (string)))))))
 
@@ -296,7 +296,7 @@ endfunction
       condition: (expr (id))
       (call_statement
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr (string))))))))
 
@@ -323,12 +323,12 @@ endfunction
         (expr (number)))
       (call_statement
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr (string)))))
       (call_statement
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr (string))))))))
 
@@ -357,7 +357,7 @@ endfunction
         (expr (number)))
       (call_statement
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr (string)))))
       condition: (expr
@@ -365,12 +365,12 @@ endfunction
         (expr (number)))
       (call_statement
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr (string)))))
       (call_statement
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr (string))))))))
 
@@ -422,7 +422,7 @@ endfunction
           (expr (number))))
       (call_statement
         (function_call
-          name: (id)
+          name: (expr (id))
           args: (function_arguments
             (expr (string)))))
       (set_statement

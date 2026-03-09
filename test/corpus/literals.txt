@@ -101,6 +101,40 @@ endfunction
       (expr (float)))))
 
 ==================
+Float - leading dot
+==================
+
+function Test takes nothing returns real
+    return .3
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (float)))))
+
+==================
+Float - trailing dot
+==================
+
+function Test takes nothing returns real
+    return 4.
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (float)))))
+
+==================
 Float - with suffix
 ==================
 
@@ -184,3 +218,39 @@ endfunction
     return_type: (id)
     (return_statement
       (expr (id)))))
+
+==================
+Rawcode (FourCC)
+==================
+
+function Test takes nothing returns integer
+    return 'cstr'
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (rawcode)))))
+
+==================
+Rawcode in function call
+==================
+
+call SaveUnitHandle(Hash, TimerId, 'cstr', Caster)
+
+---
+
+(program
+  (call_statement
+    (function_call
+      name: (expr (id))
+      args: (function_arguments
+        (expr (id))
+        (expr (id))
+        (expr (rawcode))
+        (expr (id))))))
+
