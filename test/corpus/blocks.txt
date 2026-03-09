@@ -1,0 +1,43 @@
+==================
+Unclosed loop before endglobals
+==================
+
+globals
+loop
+a = 2
+endglobals
+
+---
+
+(program
+  (globals
+    (loop_statement
+      (expr
+        (expr (id))
+        (expr (number))))))
+
+==================
+Expression before unclosed loop and after endglobals
+==================
+
+globals
+
+a = 2
+loop
+
+endglobals
+
+b =3
+
+---
+
+(program
+  (globals
+    (expr
+      (expr (id))
+      (expr (number)))
+    (loop_statement))
+  (expr
+    (expr (id))
+    (expr (number))))
+

@@ -94,6 +94,21 @@ native BJDebugMsg takes string msg returns nothing
       (parameter type: (id) name: (id)))))
 
 ==================
+Constant native declaration
+==================
+
+constant native ConvertRace takes integer i returns race
+
+---
+
+(program
+  (native_statement
+    name: (id)
+    parameters: (parameter_list
+      (parameter type: (id) name: (id)))
+    return_type: (id)))
+
+==================
 Type declaration
 ==================
 
@@ -278,7 +293,7 @@ endfunction
   (function_statement
     name: (id)
     (if_statement
-      condition: (expr (true))
+      condition: (expr (id))
       (call_statement
         (function_call
           name: (id)

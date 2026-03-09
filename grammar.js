@@ -54,12 +54,19 @@ module.exports = grammar({
 
     externals: $ => [
         $.comment,
-        $._string_content
+        $._string_content,
+        $._id_token,
+        // Virtual closing tokens emitted by scanner when a closing keyword
+        // for an outer block is seen while an inner block is still open.
+        // Zero-width tokens that let tree-sitter close inner blocks first.
+        $._virtual_endloop,
+        $._virtual_endglobals,
+        $._virtual_endfunction,
+        $._virtual_endif,
     ],
 
     extras: $ => [/\n/, /\s/, $.comment],
 
-    // word: $ => $.id,
 
     conflicts: $ => [
         [$.var_stmt, $.expr],
@@ -68,9 +75,11 @@ module.exports = grammar({
     rules: {
         program: $ => repeat($._statement),
 
-        // Identifier: inline token (word mechanism ensures keywords checked first)
-        id: _ => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
+        // Identifier: defined in external scanner to exclude keywords.
+        // External scanner returns ID_TOKEN only for non-keyword words.
+        // Keywords are rejected, forcing tree-sitter to match them as keyword tokens.
+        id: $ => $._id_token,
 
         _statement: $ => choice(
             $.globals,
@@ -91,16 +100,16 @@ module.exports = grammar({
         loop_statement: $ => seq(
             'loop',
             repeat($._statement),
-            'endloop'
+            choice('endloop', $._virtual_endloop)
         ),
 
-        var_stmt: $ => seq(
+        var_stmt: $ => prec.dynamic(1, seq(
             optional('constant'),
             field('type', $.id),
             optional('array'),
             $.var_decl,
             repeat(seq(',', $.var_decl))
-        ),
+        )),
 
         var_decl: $ => seq(
             field('name', $.id),
@@ -212,10 +221,11 @@ module.exports = grammar({
                 repeat($._statement)
             )),
             optional(seq('else', repeat($._statement))),
-            'endif'
+            choice('endif', $._virtual_endif)
         ),
 
         native_statement: $ => seq(
+            optional('constant'),
             'native',
             field('name', $.id),
             'takes',
@@ -239,13 +249,13 @@ module.exports = grammar({
             'returns',
             field('return_type', choice('nothing', $.id)),
             repeat($._statement),
-            'endfunction'
+            choice('endfunction', $._virtual_endfunction)
         ),
 
         globals: $ => seq(
             'globals',
             repeat($._statement),
-            'endglobals'
+            choice('endglobals', $._virtual_endglobals)
         ),
 
         parameter_list: $ =>

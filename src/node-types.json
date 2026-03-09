@@ -271,6 +271,11 @@
     }
   },
   {
+    "type": "id",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "if_statement",
     "named": true,
     "fields": {
@@ -866,10 +871,6 @@
   {
     "type": "globals",
     "named": false
-  },
-  {
-    "type": "id",
-    "named": true
   },
   {
     "type": "if",
