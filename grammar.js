@@ -56,6 +56,7 @@ module.exports = grammar({
     externals: $ => [
         $.comment,
         $._string_content,
+        $.escape_sequence,
         $.rawcode,
         $._id_token,
         // Virtual closing tokens emitted by scanner when a closing keyword
@@ -164,7 +165,8 @@ module.exports = grammar({
             return token(seq(
                 choice(
                     decimalDigits,
-                    seq(/0[xX]/, hexDigits),
+                    // $ is a JASS synonym for 0x: $AABBCCDD === 0xAABBCCDD
+                    seq(choice(/0[xX]/, '$'), hexDigits),
                     seq(/0[bB]/, binDigits),
                 ),
                 optional(/([lL]|[uU][lL]?)/),
@@ -198,8 +200,8 @@ module.exports = grammar({
         // FourCC / rawcode integer literal: 'xxxx' (4 chars packed into 32-bit int)
         // No escape sequences, newlines allowed — handled by external scanner
 
-        // String literal in double quotes — JASS has NO escape sequences
-        string: $ => seq('"', optional($._string_content), '"'),
+        // String literal in double quotes with \\, \", \n and \r escape sequences
+        string: $ => seq('"', repeat(choice($._string_content, $.escape_sequence)), '"'),
 
         // Helper: comma-separated list of identifiers
         _id_list: $ =>

@@ -33,6 +33,23 @@ endfunction
       (expr (number)))))
 
 ==================
+Integer - hex with $ prefix
+==================
+
+function Test takes nothing returns integer
+    return $AABBCCDD
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    return_type: (id)
+    (return_statement
+      (expr (number)))))
+
+==================
 Integer - binary
 ==================
 
@@ -253,4 +270,83 @@ call SaveUnitHandle(Hash, TimerId, 'cstr', Caster)
         (expr (id))
         (expr (rawcode))
         (expr (id))))))
+
+
+
+==================
+String - simple
+==================
+
+"hello world"
+
+---
+
+(program
+  (expr (string)))
+
+==================
+String - escaped backslash
+==================
+
+"path\\to\\file"
+
+---
+
+(program
+  (expr (string (escape_sequence) (escape_sequence))))
+
+==================
+String - escaped quote
+==================
+
+"say \"hello\""
+
+---
+
+(program
+  (expr (string (escape_sequence) (escape_sequence))))
+
+==================
+String - mixed escapes
+==================
+
+"line1\\nline2\"end"
+
+---
+
+(program
+  (expr (string (escape_sequence) (escape_sequence))))
+
+==================
+String - only escapes
+==================
+
+"\\\""
+
+---
+
+(program
+  (expr (string (escape_sequence) (escape_sequence))))
+
+==================
+String - escaped newline
+==================
+
+"line1\nline2"
+
+---
+
+(program
+  (expr (string (escape_sequence))))
+
+==================
+String - escaped carriage return
+==================
+
+"line1\rline2"
+
+---
+
+(program
+  (expr (string (escape_sequence))))
 

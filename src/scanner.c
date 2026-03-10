@@ -5,6 +5,7 @@
 enum TokenType {
     COMMENT,
     STRING_CONTENT,
+    ESCAPE_SEQUENCE,
     RAWCODE,
     ID_TOKEN,
     VIRTUAL_ENDLOOP,
@@ -79,6 +80,7 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
     bool error_recovery =
         valid_symbols[COMMENT] &&
         valid_symbols[STRING_CONTENT] &&
+        valid_symbols[ESCAPE_SEQUENCE] &&
         valid_symbols[RAWCODE] &&
         valid_symbols[ID_TOKEN] &&
         valid_symbols[VIRTUAL_ENDLOOP] &&
@@ -86,12 +88,26 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
         valid_symbols[VIRTUAL_ENDFUNCTION] &&
         valid_symbols[VIRTUAL_ENDIF];
 
-    // String content — JASS has NO escape sequences, everything is literal
+    // Escape sequence inside double-quoted string: \\, \", \n, \r
+    if (valid_symbols[ESCAPE_SEQUENCE] && !error_recovery && lexer->lookahead == '\\') {
+        advance(lexer);
+        if (lexer->lookahead == '\\' || lexer->lookahead == '"' || lexer->lookahead == 'n' || lexer->lookahead == 'r') {
+            advance(lexer);
+            lexer->mark_end(lexer);
+            lexer->result_symbol = ESCAPE_SEQUENCE;
+            return true;
+        }
+        // Not a valid escape — treat backslash as string content
+        // Fall through; mark_end was not called so nothing consumed
+        return false;
+    }
+
+    // String content — everything except closing quote, backslash, and EOF
     if (valid_symbols[STRING_CONTENT] && !error_recovery) {
         lexer->result_symbol = STRING_CONTENT;
         bool has_content = false;
         while (true) {
-            if (lexer->lookahead == '"' || lexer->lookahead == 0) {
+            if (lexer->lookahead == '"' || lexer->lookahead == '\\' || lexer->lookahead == 0) {
                 return has_content;
             }
             advance(lexer);
