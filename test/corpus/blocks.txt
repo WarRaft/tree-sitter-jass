@@ -1,4 +1,21 @@
 ==================
+Block closing keyword at EOF without trailing whitespace
+==================
+
+globals
+integer a = 0xFF
+endglobals
+---
+
+(program
+  (globals
+    (var_stmt
+      type: (id)
+      (var_decl
+        name: (id)
+        value: (expr (number))))))
+
+==================
 Unclosed loop before endglobals
 ==================
 

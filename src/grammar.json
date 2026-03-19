@@ -1,6 +1,7 @@
 {
   "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "jass",
+  "word": "id",
   "rules": {
     "program": {
       "type": "REPEAT",
@@ -10,8 +11,8 @@
       }
     },
     "id": {
-      "type": "SYMBOL",
-      "name": "_id_token"
+      "type": "PATTERN",
+      "value": "[a-zA-Z_][a-zA-Z0-9_]*"
     },
     "_statement": {
       "type": "CHOICE",
@@ -1846,10 +1847,6 @@
     {
       "type": "SYMBOL",
       "name": "rawcode"
-    },
-    {
-      "type": "SYMBOL",
-      "name": "_id_token"
     },
     {
       "type": "SYMBOL",

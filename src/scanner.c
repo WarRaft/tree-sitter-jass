@@ -7,35 +7,11 @@ enum TokenType {
     STRING_CONTENT,
     ESCAPE_SEQUENCE,
     RAWCODE,
-    ID_TOKEN,
     VIRTUAL_ENDLOOP,
     VIRTUAL_ENDGLOBALS,
     VIRTUAL_ENDFUNCTION,
     VIRTUAL_ENDIF,
 };
-
-// --- Keyword tables ---
-
-static const char *KEYWORDS[] = {
-    "globals", "endglobals",
-    "function", "endfunction",
-    "loop", "endloop",
-    "if", "then", "else", "elseif", "endif",
-    "local", "set", "call", "return", "exitwhen",
-    "native", "type", "extends", "takes", "returns",
-    "constant", "array", "nothing",
-    "and", "or", "not",
-    NULL
-};
-
-static bool is_keyword(const char *word, size_t len) {
-    for (const char **kw = KEYWORDS; *kw; kw++) {
-        if (strlen(*kw) == len && strncmp(word, *kw, len) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
 
 // --- Character helpers ---
 
@@ -82,7 +58,6 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
         valid_symbols[STRING_CONTENT] &&
         valid_symbols[ESCAPE_SEQUENCE] &&
         valid_symbols[RAWCODE] &&
-        valid_symbols[ID_TOKEN] &&
         valid_symbols[VIRTUAL_ENDLOOP] &&
         valid_symbols[VIRTUAL_ENDGLOBALS] &&
         valid_symbols[VIRTUAL_ENDFUNCTION] &&
@@ -137,6 +112,34 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
     }
 
 
+    // --- Emit virtual close at EOF (before peeking at identifiers) ---
+    //
+    // Must check BEFORE the identifier-peek block, because the peek block
+    // advances past the word and corrupts lookahead. If we're truly at EOF,
+    // emit the virtual close now.
+    if (lexer->lookahead == 0 && !error_recovery) {
+        if (valid_symbols[VIRTUAL_ENDLOOP]) {
+            lexer->mark_end(lexer);
+            lexer->result_symbol = VIRTUAL_ENDLOOP;
+            return true;
+        }
+        if (valid_symbols[VIRTUAL_ENDIF]) {
+            lexer->mark_end(lexer);
+            lexer->result_symbol = VIRTUAL_ENDIF;
+            return true;
+        }
+        if (valid_symbols[VIRTUAL_ENDFUNCTION]) {
+            lexer->mark_end(lexer);
+            lexer->result_symbol = VIRTUAL_ENDFUNCTION;
+            return true;
+        }
+        if (valid_symbols[VIRTUAL_ENDGLOBALS]) {
+            lexer->mark_end(lexer);
+            lexer->result_symbol = VIRTUAL_ENDGLOBALS;
+            return true;
+        }
+    }
+
     // --- Virtual closing tokens ---
     //
     // Logic: when the grammar expects a virtual close (meaning we're at the
@@ -150,8 +153,9 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
     //   → emit _virtual_endloop (zero-width) → loop closes
     //   → next step, grammar sees "endglobals" and closes globals normally
     //
-    // We also emit virtual close if we see EOF or any opening keyword, which
-    // means the block was never closed.
+    // IMPORTANT: The peek advances past the word, so after this block
+    // lexer->lookahead may be 0 (EOF) even though we're not at real EOF.
+    // We must NOT fall through to an EOF check after this.
     if (is_id_start(lexer->lookahead) && !error_recovery) {
         // Which virtual tokens does the grammar currently accept?
         bool want_endloop = valid_symbols[VIRTUAL_ENDLOOP];
@@ -160,7 +164,7 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
         bool want_endif = valid_symbols[VIRTUAL_ENDIF];
 
         if (want_endloop || want_endglobals || want_endfunction || want_endif) {
-            // Peek at the upcoming word without consuming
+            // Peek at the upcoming word without consuming (mark_end before peek)
             lexer->mark_end(lexer);
 
             char buf[64];
@@ -191,30 +195,11 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
                     return true;
                 }
             }
-        }
-    }
 
-    // Also emit virtual close at EOF (but not during error recovery)
-    if (lexer->lookahead == 0 && !error_recovery) {
-        if (valid_symbols[VIRTUAL_ENDLOOP]) {
-            lexer->mark_end(lexer);
-            lexer->result_symbol = VIRTUAL_ENDLOOP;
-            return true;
-        }
-        if (valid_symbols[VIRTUAL_ENDIF]) {
-            lexer->mark_end(lexer);
-            lexer->result_symbol = VIRTUAL_ENDIF;
-            return true;
-        }
-        if (valid_symbols[VIRTUAL_ENDFUNCTION]) {
-            lexer->mark_end(lexer);
-            lexer->result_symbol = VIRTUAL_ENDFUNCTION;
-            return true;
-        }
-        if (valid_symbols[VIRTUAL_ENDGLOBALS]) {
-            lexer->mark_end(lexer);
-            lexer->result_symbol = VIRTUAL_ENDGLOBALS;
-            return true;
+            // The peek consumed the word — lookahead is now past it.
+            // Do NOT continue; return false so tree-sitter resets to mark_end
+            // and re-lexes the keyword via the internal lexer.
+            return false;
         }
     }
 
@@ -227,26 +212,6 @@ bool tree_sitter_jass_external_scanner_scan(void *payload, TSLexer *lexer,
                 advance(lexer);
             }
             lexer->result_symbol = COMMENT;
-            return true;
-        }
-        return false;
-    }
-
-    // ID_TOKEN: [a-zA-Z_][a-zA-Z0-9_]* that is NOT a keyword
-    if (valid_symbols[ID_TOKEN] && is_id_start(lexer->lookahead)) {
-        char buf[256];
-        size_t len = 0;
-
-        lexer->result_symbol = ID_TOKEN;
-
-        while (is_id_cont(lexer->lookahead) && len < sizeof(buf) - 1) {
-            buf[len++] = (char)lexer->lookahead;
-            advance(lexer);
-        }
-        buf[len] = '\0';
-
-        if (!is_keyword(buf, len)) {
-            lexer->mark_end(lexer);
             return true;
         }
         return false;

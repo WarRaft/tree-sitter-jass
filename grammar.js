@@ -53,12 +53,19 @@ const PREC = {
 module.exports = grammar({
     name: 'jass',
 
+    // WORD RULE — tells tree-sitter how to identify word boundaries for keywords.
+    // Without this, 'or' in 'orderString' would be matched as the 'or' keyword.
+    // With this, tree-sitter first matches the full word /[a-zA-Z_]\w*/, then
+    // checks if it equals the keyword. 'orderString' != 'or', so no false match.
+    // The word rule also handles keyword/identifier disambiguation natively,
+    // so we don't need the external scanner to reject keywords from id matching.
+    word: $ => $.id,
+
     externals: $ => [
         $.comment,
         $._string_content,
         $.escape_sequence,
         $.rawcode,
-        $._id_token,
         // Virtual closing tokens emitted by scanner when a closing keyword
         // for an outer block is seen while an inner block is still open.
         // Zero-width tokens that let tree-sitter close inner blocks first.
@@ -78,11 +85,10 @@ module.exports = grammar({
     rules: {
         program: $ => repeat($._statement),
 
-
-        // Identifier: defined in external scanner to exclude keywords.
-        // External scanner returns ID_TOKEN only for non-keyword words.
-        // Keywords are rejected, forcing tree-sitter to match them as keyword tokens.
-        id: $ => $._id_token,
+        // Identifier: simple regex token, also serves as the 'word' rule.
+        // tree-sitter's keyword extraction (via 'word' property) ensures that
+        // keywords like 'or' won't match inside longer words like 'orderString'.
+        id: _ => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
         _statement: $ => choice(
             $.globals,
