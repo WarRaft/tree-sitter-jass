@@ -269,6 +269,7 @@ module.exports = grammar({
         ),
 
         function_statement: $ => seq(
+            optional('constant'),
             'function',
             field('name', $.id),
             'takes',

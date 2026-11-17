@@ -161,6 +161,22 @@ endfunction
         (expr (id))))))
 
 ==================
+Function - constant
+==================
+
+constant function GetElementalTypeAbilitySlot takes integer aIntValue returns integer
+endfunction
+
+---
+
+(program
+  (function_statement
+    name: (id)
+    parameters: (parameter_list
+      (parameter type: (id) name: (id)))
+    return_type: (id)))
+
+==================
 Function - with locals
 ==================
 
